@@ -40,6 +40,7 @@ import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
@@ -495,6 +496,15 @@ public class GatewayProxyFactoryBeanTests {
 		Map<Method, MessagingGatewaySupport> gateways = gpfb.getGateways();
 		assertThat(gateways.size()).isEqualTo(2);
 	}
+	
+	@Test
+	public void testAliasForSupport() {
+		GatewayProxyFactoryBean<AliasForGatewayService> gpfb = new GatewayProxyFactoryBean<>(AliasForGatewayService.class);
+		gpfb.setBeanFactory(mock(BeanFactory.class));
+		gpfb.afterPropertiesSet();
+		Map<Method, MessagingGatewaySupport> gateways = gpfb.getGateways();
+		assertThat(gateways.size()).isEqualTo(1);
+	}
 
 	public static void throwTestException() throws TestException {
 		throw new TestException();
@@ -513,6 +523,17 @@ public class GatewayProxyFactoryBeanTests {
 		@Gateway(headers = @GatewayHeader(name = MessageHeaders.ID, value = "id"))
 		Message<?> echo(String s);
 
+	}
+	
+	@Gateway
+	@interface AnnotationWithAliasForGateway {
+		@AliasFor(annotation = Gateway.class, attribute = "requestChannel")
+		String requestChannelName() default "";
+	}
+	
+	interface AliasForGatewayService {
+		@AnnotationWithAliasForGateway(requestChannelName = "foo")
+		void foo();
 	}
 
 	interface HeadersParamService {
